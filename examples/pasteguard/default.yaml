@@ -1,0 +1,17 @@
+# Run from this directory: fault hooks run in canarywire's working directory.
+target:
+  base_url: http://127.0.0.1:3000
+  routes:
+    - {protocol: openai-chat, path: /openai/v1/chat/completions}
+    - {protocol: anthropic-messages, path: /anthropic/v1/messages}
+timeouts:
+  fault_command: 130   # the after-hook polls /health for up to 120 s while the detector restarts
+faults:
+  - name: detector-down
+    before: docker compose exec -T pasteguard python3 /opt/canarywire/kill_detector.py
+    after: >-
+      for i in $(seq 1 60); do
+      curl -fsS http://127.0.0.1:3000/health 2>/dev/null | grep -q '"healthy"' && exit 0;
+      sleep 2;
+      done;
+      echo "detector did not recover within 120s" >&2; exit 1

@@ -1,0 +1,22 @@
+# Run from this directory: canarywire connects to the container published on 127.0.0.1:8080.
+# A custom template built around just an email and an IBAN, run under fragmentation, isolates
+# streaming behavior from the noise of the full default template set.
+target:
+  base_url: http://127.0.0.1:8080
+  routes:
+    - {protocol: openai-chat, path: /v1/chat/completions}
+    - {protocol: anthropic-messages, path: /v1/messages}
+timeouts:
+  client_request: 90
+templates:
+  statement:
+    canaries: {email: email, iban: iban}
+    request:
+      messages:
+        - role: user
+          content: "Send the statement for IBAN {{ iban.raw }} to {{ email.raw }} please."
+    response:
+      content: "Statement for {{ iban.masked }} sent to {{ email.masked }}."
+generators:
+  baseline: {templates: [statement]}
+  fragmentation: {templates: [statement]}

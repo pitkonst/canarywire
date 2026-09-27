@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments
+.venv/
+.env
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# canarywire run output
+out/
+.canarywire/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local agent workspaces
+.superpowers/
+.claude/
+
+# Internal design docs (kept locally, not published)
+docs/specs/
+docs/plans/
+docs/roadmap.md

@@ -1,0 +1,45 @@
+# LiteLLM + Presidio in front of canarywire's capture. Run from this directory; see README.md.
+# Images float on their tag: `evaluate.sh` evaluates whatever release that tag currently resolves
+# to, and its own printed image digests are the source of truth for what a given run tested.
+x-presidio-healthcheck: &presidio-healthcheck
+  test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000/health"]
+  interval: 2s
+  timeout: 2s
+  retries: 60
+  start_period: 5s
+
+x-litellm: &litellm
+  image: ghcr.io/berriai/litellm:main-stable
+  command: ["--config", "/config/litellm.yaml", "--port", "4000"]
+  environment:
+    CAPTURE_URL: "${CAPTURE_URL:-http://host.docker.internal:8765/v1}"
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  depends_on:
+    presidio-analyzer: {condition: service_healthy}
+    presidio-anonymizer: {condition: service_healthy}
+  healthcheck:
+    # The image has no curl or wget; its Python is on PATH.
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness', timeout=2)"]
+    interval: 2s
+    timeout: 3s
+    retries: 60
+    start_period: 5s
+
+services:
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    healthcheck: *presidio-healthcheck
+
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:latest
+    healthcheck: *presidio-healthcheck
+
+  litellm:
+    <<: *litellm
+    volumes: ["./litellm.yaml:/config/litellm.yaml:ro"]
+    ports: ["127.0.0.1:4000:4000"]
+
+  litellm-scoped:
+    <<: *litellm
+    volumes: ["./litellm-scoped.yaml:/config/litellm.yaml:ro"]
+    ports: ["127.0.0.1:4001:4000"]

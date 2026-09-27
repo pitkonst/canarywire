@@ -1,0 +1,15 @@
+mode: mask
+server: {port: 3000, host: "0.0.0.0"}
+providers:
+  openai: {base_url: "${CAPTURE_URL:-http://host.docker.internal:8765}/v1"}
+  anthropic: {base_url: "${CAPTURE_URL:-http://host.docker.internal:8765}"}
+masking: {show_markers: false, marker_text: "[protected]"}
+pii_detection:
+  detector_url: http://localhost:5002
+  detector_timeout: 30
+  phone_regions: []
+  score_threshold: 0.7
+  entities: [PERSON, LOCATION, EMAIL_ADDRESS, PHONE_NUMBER, CREDIT_CARD, IBAN_CODE, IP_ADDRESS, VAT_CODE]
+secrets_detection: {enabled: true, action: mask, entities: [API_KEY_SK], max_scan_chars: 200000, log_detected_types: true}
+logging: {driver: sqlite, database: /tmp/pasteguard.db, retention_days: 1, log_masked_content: true}
+dashboard: {enabled: false}

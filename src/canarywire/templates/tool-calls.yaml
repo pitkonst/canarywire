@@ -1,0 +1,34 @@
+canaries:
+  card: card
+  iban: iban
+  email: email
+request:
+  model: canarywire-test
+  tools:
+    - name: refund
+      description: "Refund a card payment. Default payout account {{ iban.raw }}."
+      parameters:
+        type: object
+        properties:
+          card: {type: string}
+          iban: {type: string}
+          email: {type: string}
+        required: [card, iban, email]
+  messages:
+    - role: user
+      content: "Refund the last charge on card {{ card.raw }} and email the receipt to {{ email.raw }}."
+    - role: assistant
+      content: null
+      tool_calls:
+        - id: call_lookup
+          name: lookup
+          arguments: {card: "{{ card.raw }}"}
+    - role: tool
+      tool_call_id: call_lookup
+      content: {status: found, receipt_to: "{{ email.raw }}"}
+response:
+  content: null
+  tool_calls:
+    - id: call_refund
+      name: refund
+      arguments: {card: "{{ card.masked }}", iban: "{{ iban.masked }}", email: "{{ email.masked }}"}

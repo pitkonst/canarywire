@@ -1,0 +1,106 @@
+# canarywire.yaml — every key the config parser accepts, each set to its actual default.
+#
+# Copy this file, delete whatever you don't change: every key is optional, and a key you omit
+# gets exactly the default shown here. CLI flags override the file, both present or absent:
+#   --target, --capture, --seed, --out, --junit, --generators, --timeout-<name>
+#
+# Lines starting with "#>" are commented-out examples, not defaults: that key has no built-in
+# default (target.base_url), or holds a user-defined collection (canary_types, templates,
+# faults, and extra report.outputs entries) that defaults to empty, or to the one entry already
+# shown uncommented. Uncomment one to use it.
+#
+# Maintainer note: an example line is the two characters "#>" immediately followed by the exact
+# line it would be if uncommented, indentation included — so restoring it is just deleting the
+# leading "#>". tests/test_config_reference.py relies on this marker to check that this file
+# exercises every key the parser accepts, and only those keys.
+
+seed:                                    # integer; unset (default) means a fresh seed each run,
+                                          # written to the report so a failure can be replayed — or --seed
+
+capture:
+  url: http://127.0.0.1:8765             # the capture server's base URL — or --capture
+
+target:
+#>  base_url: http://127.0.0.1:4000      # required; no default — or --target
+  duty: restore                          # restore | mask-only (gateways that never restore)
+  routes:                                # non-empty list; default: one openai-chat route below
+    - {protocol: openai-chat, path: /v1/chat/completions}
+#>    - {protocol: anthropic-messages, path: /v1/messages, name: claude}   # name defaults to protocol
+
+timeouts:                                # seconds; each has --timeout-<name>, except fault_command
+  capture_connect: 5                     # connecting to the capture server
+  client_request: 30                     # waiting for the gateway's response
+  upstream_response: 30                  # waiting for the capture's scripted response to be sent
+  upstream_done: 2                       # draining the capture's record of the upstream request
+  serve_ready: 10                        # waiting for a detached capture server to come up
+  stop_grace: 10                         # waiting for a detached capture server to stop
+  fault_command: 60                      # running one fault's before/after command
+
+generators:
+  baseline:
+    enabled: true
+    templates: [default, tool-calls, multi-turn]   # sent once each, non-streaming
+  fragmentation:
+    enabled: true
+    templates: [default, multi-turn]       # streamed; each needs a response.content slot
+    cases: [baseline, chunks, random-chunks, random-cuts]   # must include baseline
+    chunks:
+      sizes: [1, 2, 4]                     # fixed chunk sizes, in characters
+      phases: all                          # all (every phase of each size) | first
+    random_chunks:
+      samples: 4                           # number of random-chunk-size cases
+      min: 1                               # smallest chunk size, in characters
+      max: 8                               # largest chunk size, in characters
+    random_cuts:
+      samples: 4                           # number of random-cut cases
+      max_cuts: 6                          # cuts per case is 1..max_cuts, random
+    delay_ms:
+      min: 0                               # smallest seeded delay before a content event
+      max: 5                               # largest seeded delay before a content event
+  fault:
+    enabled: true
+    templates: [default]                   # sent once per fault (and once unfaulted, as a control)
+
+#>canary_types:                            # your own types; default: none (built-ins only)
+#>  customer_id:                           # a list of values: full control, nothing generated
+#>    values: ["CUST-00412871", "CUST-99120034", "CUST-00000417"]
+#>  contract_no:                           # a JSON Schema pattern (ECMA-262 subset)
+#>    schema: {type: string, pattern: "^K-20[0-9]{2}-[0-9]{5}/[A-Z]{2}$"}
+#>  work_email:                            # a JSON Schema format
+#>    schema: {type: string, format: email}
+#>  corporate_card:
+#>    schema: {type: string, pattern: "^4[0-9]{15}$"}
+#>    checksum: luhn                       # luhn | mod97 | mod11 | "package.module:function"
+#>  loyalty_no:                            # your own Python code, importable when `run` starts
+#>    generator: "acme_canaries.loyalty:generate"
+
+#>templates:                               # your own templates, or overrides of a built-in name
+#>  invoice:                               # default: none (only the built-ins run)
+#>    canaries:
+#>      customer: email
+#>      card: {type: card, brand: amex, format: grouped}
+#>      contract: contract_no
+#>    request:
+#>      messages:
+#>        - role: user
+#>          content: "Bill contract {{ contract.raw }} to card {{ card.raw }}, receipt to {{ customer.raw }}."
+#>    response:
+#>      content: "Billed {{ contract.masked }} to {{ card.masked }}; receipt sent to {{ customer.masked }}."
+
+#>faults:                                  # default: none (the fault generator then does nothing)
+#>  - name: analyzer-down
+#>    before: docker stop presidio-analyzer
+#>    after: docker start presidio-analyzer
+#>    expect: refuse                       # the default
+#>  - name: analyzer-slow
+#>    before: tc qdisc add dev eth0 root netem delay 5s
+#>    after: tc qdisc del dev eth0 root
+#>    expect: [refuse, restore]            # [refuse, deliver] under duty mask-only
+#>    settle_ms: 500                       # wait after `before`, for faults that take effect late
+
+report:
+#>  dir: out                               # no default here; falls back to --out, then "out"
+  outputs:                                 # non-empty list; default: the one entry below
+    - {template: builtin:markdown, path: report.md}
+#>    - {template: builtin:junit, path: junit.xml}
+#>    - {template: ci/summary.md.mustache, path: summary.md, escape: none}

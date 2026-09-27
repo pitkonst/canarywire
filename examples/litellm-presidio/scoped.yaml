@@ -1,0 +1,19 @@
+# Run from this directory. Targets litellm-scoped (127.0.0.1:4001), whose guardrail is limited
+# to EMAIL_ADDRESS and IBAN_CODE (litellm-scoped.yaml), so a template with only those two kinds
+# of PII doesn't collide with overlapping recognisers.
+target:
+  base_url: http://127.0.0.1:4001
+templates:
+  statement:
+    canaries: {email: email, iban: iban}
+    request:
+      model: canarywire-test
+      messages:
+        - role: user
+          content: "Send the statement for IBAN {{ iban.raw }} to {{ email.raw }} please."
+    response:
+      content: "Statement for {{ iban.masked }} sent to {{ email.masked }}."
+generators:
+  baseline: {templates: [statement]}
+  fragmentation: {templates: [statement]}
+  fault: {enabled: false}

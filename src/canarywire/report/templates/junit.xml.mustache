@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="canarywire" tests="{{junit_tests}}" failures="{{junit_failures}}" errors="{{junit_errors}}">
+{{#generators}}
+  <testsuite name="{{name}}" tests="{{total}}" failures="{{failures}}" errors="{{errors}}">
+{{#attacks}}
+    <testcase classname="{{generator}}" name="{{name}}">
+{{#failure}}
+      <failure message="{{failure}}">{{failure_detail}}</failure>
+{{/failure}}
+{{#error}}
+      <error message="{{error}}"/>
+{{/error}}
+    </testcase>
+{{/attacks}}
+  </testsuite>
+{{/generators}}
+{{#has_run_suite}}
+  <testsuite name="run" tests="{{run_suite_tests}}" failures="{{run_suite_failures}}" errors="{{run_suite_errors}}">
+{{#run_problems}}
+    <testcase classname="run" name="{{reason}}">
+      <error message="{{reason}}"/>
+    </testcase>
+{{/run_problems}}
+{{#run_failures}}
+    <testcase classname="run" name="{{name}}">
+      <failure message="{{failure}}">{{failure_detail}}</failure>
+    </testcase>
+{{/run_failures}}
+  </testsuite>
+{{/has_run_suite}}
+</testsuites>

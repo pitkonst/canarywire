@@ -1,0 +1,16 @@
+canaries:
+  email: email
+  colleague: email
+  phone: phone
+  card: card
+request:
+  model: canarywire-test
+  messages:
+    - role: user
+      content: "Hi, I'm {{ email.raw }}, you can reach me at {{ phone.raw }}."
+    - role: assistant
+      content: "Thanks, I have {{ email.raw }} on file. How can I help?"
+    - role: user
+      content: "Please add my colleague {{ colleague.raw }} to the account of {{ email.raw }} and charge card {{ card.raw }}."
+response:
+  content: "Done: {{ colleague.masked }} can now use the account of {{ email.masked }}; card {{ card.masked }} charged, confirmation sent by SMS to {{ phone.masked }}."

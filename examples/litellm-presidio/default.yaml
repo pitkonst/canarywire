@@ -1,0 +1,9 @@
+# Run from this directory: fault hooks run in canarywire's working directory.
+target:
+  base_url: http://127.0.0.1:4000
+timeouts:
+  client_request: 90   # the first request after the analyzer stops fails closed only after ~6-31 s
+faults:
+  - name: analyzer-down
+    before: docker compose -f compose.yaml stop presidio-analyzer
+    after: docker compose -f compose.yaml up -d --wait presidio-analyzer

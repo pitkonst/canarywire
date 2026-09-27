@@ -1,0 +1,16 @@
+model_list:
+  - model_name: canarywire-test
+    litellm_params:
+      model: openai/canarywire-test
+      api_base: os.environ/CAPTURE_URL
+      api_key: sk-canarywire
+guardrails:
+  - guardrail_name: presidio-pii
+    litellm_params:
+      guardrail: presidio
+      mode: pre_call
+      default_on: true
+      output_parse_pii: true
+      pii_entities_config: {EMAIL_ADDRESS: MASK, IBAN_CODE: MASK}
+      presidio_analyzer_api_base: http://presidio-analyzer:3000
+      presidio_anonymizer_api_base: http://presidio-anonymizer:3000

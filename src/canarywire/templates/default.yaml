@@ -1,0 +1,13 @@
+canaries:
+  email: email
+  phone: phone
+  iban: iban
+  card: card
+  national_id: national_id
+request:
+  model: canarywire-test
+  messages:
+    - role: user
+      content: "Please update the account: mail {{ email.raw }}, phone {{ phone.raw }}, IBAN {{ iban.raw }}, card {{ card.raw }}, SSN {{ national_id.raw }}. Thanks."
+response:
+  content: "Updated: mail {{ email.masked }}, phone {{ phone.masked }}, IBAN {{ iban.masked }}, card {{ card.masked }}, SSN {{ national_id.masked }}."

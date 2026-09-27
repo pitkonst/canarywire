@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="canarywire" tests="6" failures="5" errors="0">
+  <testsuite name="baseline" tests="2" failures="2" errors="0">
+    <testcase classname="baseline" name="baseline/greeting@main">
+      <failure message="Leak at body.messages[0].content">Leak at body.messages[0].content
+Contact a@example.org for details</failure>
+    </testcase>
+    <testcase classname="baseline" name="baseline/farewell@main">
+      <failure message="Mangled request at body.x">Mangled request at body.x
+expected: Send {{email}} the invoice.
+actual:   Send &lt;EMAIL_1&gt;ice.</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="fragmentation" tests="1" failures="1" errors="0">
+    <testcase classname="fragmentation" name="fragmentation/greeting@main">
+      <failure message="Not restored at body.x">Not restored at body.x
+expected: Card ending 0002 approved
+actual:   Card ending REDACTED approved</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="fault" tests="2" failures="1" errors="0">
+    <testcase classname="fault" name="fault/down/greeting@main">
+      <failure message="Inconsistent placeholders at body.a">Inconsistent placeholders at body.a
+&lt;E1&gt; at body.a
+&lt;E2&gt; at body.b</failure>
+    </testcase>
+    <testcase classname="fault" name="fault/down/farewell@main">
+    </testcase>
+  </testsuite>
+  <testsuite name="run" tests="1" failures="1" errors="0">
+    <testcase classname="run" name="unexpected upstream request: url">
+      <failure message="Leak at url">Leak at url</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

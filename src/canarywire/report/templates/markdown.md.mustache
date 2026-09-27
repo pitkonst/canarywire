@@ -1,0 +1,72 @@
+# canarywire: {{outcome_upper}}
+
+{{counts.findings}} findings · {{counts.attacks}} attacks · seed {{seed}} · canarywire {{run.canarywire_version}}{{#finished}} · {{finished}}{{/finished}}
+{{#untrusted}}
+
+**Untrusted:** {{reason}}
+{{/untrusted}}
+
+## Findings
+
+{{#findings}}
+### {{number}}. {{title}}{{#instances_text}}: {{instances_text}}{{/instances_text}} in {{template}}{{#route}} @ {{route}}{{/route}}
+
+At `{{location}}` in {{attack_count}} attack(s): {{attacks_text}}.
+
+{{#has_evidence}}
+{{#leak_excerpt}}
+    {{before}}{{match}}{{after}}
+{{/leak_excerpt}}
+{{#leak_caret}}
+    {{leak_caret}}
+{{/leak_caret}}
+{{#diff_excerpt}}
+    expected: {{expected}}
+    actual:   {{actual}}
+{{/diff_excerpt}}
+{{#placeholders}}
+    {{placeholder}} at {{path}}
+{{/placeholders}}
+{{/has_evidence}}
+{{^has_evidence}}
+No excerpt: the value is missing on one side.
+{{/has_evidence}}
+
+{{/findings}}
+{{^findings}}
+No findings.{{#passed}} All {{verified}} values verified.{{/passed}}
+
+{{/findings}}
+{{#has_problems}}
+## Trust problems
+
+{{#problems}}
+- {{^run_level}}{{count}} attack(s): {{/run_level}}{{reason}}
+{{/problems}}
+
+{{/has_problems}}
+## Attacks
+
+{{#generators}}
+- {{name}}: {{total}} case(s): {{summary}}
+{{/generators}}
+
+{{#has_faults}}
+## Faults
+
+{{#faults}}
+- `{{name}}`: {{summary}}
+{{/faults}}
+
+{{/has_faults}}
+## Run
+
+- Target: {{target}}
+- Duty: {{duty}}
+- Routes: {{run.routes_text}}
+- Templates: {{run.templates_text}}
+- Config: {{run.config_text}}
+- Capture: {{capture.url}}, {{capture.requests}} upstream request(s)
+- Negative control: {{#negative_control.caught}}caught{{/negative_control.caught}}{{^negative_control.caught}}NOT caught{{/negative_control.caught}}
+- Verified values: {{verified}}
+- Replay: `{{replay}}`

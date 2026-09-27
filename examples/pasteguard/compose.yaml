@@ -1,0 +1,25 @@
+# PasteGuard in front of canarywire's capture. Run from this directory; see README.md.
+# The image floats on `latest`: `evaluate.sh` evaluates whatever release that tag currently
+# resolves to, and its own printed image digest is the source of truth for what a given run
+# tested.
+#
+# `platform: linux/amd64` is deliberate: the native arm64 image's GLiNER detector segfaults on
+# Apple Silicon Docker (onnxruntime CPU feature detection); the amd64 image under emulation works.
+services:
+  pasteguard:
+    image: ghcr.io/sgasser/pasteguard:latest
+    platform: linux/amd64
+    environment:
+      CAPTURE_URL: "${CAPTURE_URL:-http://host.docker.internal:8765}"
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["127.0.0.1:3000:3000"]
+    volumes:
+      - "./config.yaml:/pasteguard/config.yaml:ro"
+      - "./kill_detector.py:/opt/canarywire/kill_detector.py:ro"
+    healthcheck:
+      # The image has no shell utilities like curl; its Python is on PATH.
+      test: ["CMD", "python3", "-c", "import urllib.request; assert b'\"healthy\"' in urllib.request.urlopen('http://localhost:3000/health', timeout=2).read()"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 20s

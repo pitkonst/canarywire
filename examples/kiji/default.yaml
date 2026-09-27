@@ -1,0 +1,11 @@
+# Run from this directory: canarywire connects to the container published on 127.0.0.1:8080.
+target:
+  base_url: http://127.0.0.1:8080
+  routes:
+    - {protocol: openai-chat, path: /v1/chat/completions}
+    - {protocol: anthropic-messages, path: /v1/messages}
+timeouts:
+  client_request: 90
+generators:
+  fragmentation:
+    enabled: false   # covered by streaming.yaml instead, to keep this run's time down

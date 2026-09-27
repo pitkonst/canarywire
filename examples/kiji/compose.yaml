@@ -1,0 +1,28 @@
+# Kiji Privacy Proxy in front of canarywire's capture. Run from this directory; see README.md.
+# There is no published Docker image (see Dockerfile): the image is built locally from the latest
+# (or ARG KIJI_VERSION-pinned) GitHub release tarball, so `evaluate.sh` prints the resolved
+# version instead of an image digest as the source of truth for what a given run tested.
+#
+# `platform: linux/amd64` is deliberate: upstream only ships amd64 release binaries; the image
+# runs under emulation on Apple Silicon.
+services:
+  kiji:
+    build:
+      context: .
+      args:
+        KIJI_VERSION: "${KIJI_VERSION:-}"
+    image: canarywire-example/kiji:local
+    platform: linux/amd64
+    environment:
+      OPENAI_BASE_URL: "${CAPTURE_URL:-http://host.docker.internal:8765}"
+      ANTHROPIC_BASE_URL: "${CAPTURE_URL:-http://host.docker.internal:8765}"
+      OPENAI_API_KEY: "sk-canarywire-dummy"
+      ANTHROPIC_API_KEY: "sk-ant-canarywire-dummy"
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["127.0.0.1:8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
