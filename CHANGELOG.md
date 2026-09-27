@@ -4,7 +4,7 @@ All notable changes to canarywire. The format follows [Keep a Changelog](https:/
 versions follow [Semantic Versioning](https://semver.org/). Before 1.0, a minor version may break
 the config file, the `report.json` format or exit-code rules; each such change is listed here.
 
-## [0.1.0a1] - Unreleased
+## [0.1.0a1] - 2026-09-27
 
 First public release, an alpha.
 
