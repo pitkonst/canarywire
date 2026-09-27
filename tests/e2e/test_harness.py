@@ -4,15 +4,33 @@ from pathlib import Path
 
 import anyio
 import pytest
-from harness import E2E, ProcessExitedError, free_port, is_listening, kill_pidfile, wait_ready
+from harness import (
+    E2E,
+    ECHO_UPSTREAM,
+    ProcessExitedError,
+    free_port,
+    is_listening,
+    kill_pidfile,
+    wait_ready,
+)
 
 pytestmark = [pytest.mark.e2e, pytest.mark.anyio]
 
 
-async def test_process_lifecycle(e2e: E2E) -> None:
+async def test_process_lifecycle(e2e: E2E, tmp_path: Path) -> None:
+    # Not `python -m http.server`: its server_bind does a reverse DNS lookup (getfqdn) that can
+    # stall for well over 10 s on macOS CI runners.
     port = free_port()
     proc = await e2e.start(
-        "http", [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"]
+        "echo",
+        [
+            sys.executable,
+            str(ECHO_UPSTREAM),
+            "--listen",
+            f"127.0.0.1:{port}",
+            "--log",
+            str(tmp_path / "echo.jsonl"),
+        ],
     )
     await wait_ready(f"http://127.0.0.1:{port}/", proc)
     assert is_listening(port)

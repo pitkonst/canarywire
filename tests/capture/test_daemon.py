@@ -2,6 +2,7 @@ import contextlib
 import signal
 import subprocess
 import sys
+import time
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -39,6 +40,11 @@ def fake_capture() -> Iterator[subprocess.Popen[bytes]]:
     process = subprocess.Popen(  # noqa: S603 - fixed argv
         [sys.executable, "-c", SLEEP, "canarywire", "serve"]
     )
+    # Until the child has exec'd, `ps` shows the parent's command line (pytest's), not ours.
+    deadline = time.monotonic() + HEALTH_TIMEOUT
+    while not is_capture(process.pid):
+        assert time.monotonic() < deadline, "fake capture never showed its command line"
+        time.sleep(0.01)
     yield process
     process.kill()
     process.wait()
