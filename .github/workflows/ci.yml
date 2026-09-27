@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.python }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.12", "3.14"]
+        include:
+          - os: macos-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv build
+      - run: uvx twine check --strict dist/*
+      - name: Smoke-test the wheel (README quick start, the capture as its own target)
+        run: |
+          uv venv --python 3.10 "$RUNNER_TEMP/smoke"
+          uv pip install --python "$RUNNER_TEMP/smoke/bin/python" dist/*.whl
+          export PATH="$RUNNER_TEMP/smoke/bin:$PATH"
+          cd "$RUNNER_TEMP"
+          canarywire --version
+          canarywire serve --detach --listen 127.0.0.1:8765
+          set +e
+          canarywire run --target http://127.0.0.1:8765
+          code=$?
+          set -e
+          canarywire stop
+          # No gateway in between: every canary reaches the upstream, so the run must fail (1).
+          test "$code" = 1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ci-dist  # not `dist`: the release workflow calls this one and uploads its own
+          path: dist/
