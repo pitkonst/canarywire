@@ -14,6 +14,7 @@ from live import dead_proxy, free_port
 from canarywire.capture import daemon
 from canarywire.capture.daemon import (
     PID_FILE,
+    PS,
     is_capture,
     live_pid,
     read_pid,
@@ -40,14 +41,29 @@ def fake_capture() -> Iterator[subprocess.Popen[bytes]]:
     process = subprocess.Popen(  # noqa: S603 - fixed argv
         [sys.executable, "-c", SLEEP, "canarywire", "serve"]
     )
-    # Until the child has exec'd, `ps` shows the parent's command line (pytest's), not ours.
-    deadline = time.monotonic() + HEALTH_TIMEOUT
-    while not is_capture(process.pid):
-        assert time.monotonic() < deadline, "fake capture never showed its command line"
-        time.sleep(0.01)
-    yield process
-    process.kill()
-    process.wait()
+    try:
+        # Until the child has exec'd, `ps` shows the parent's command line (pytest's), not ours.
+        deadline = time.monotonic() + HEALTH_TIMEOUT
+        while not is_capture(process.pid):
+            assert time.monotonic() < deadline, _command_lines(process.pid)
+            time.sleep(0.01)
+        yield process
+    finally:
+        process.kill()
+        process.wait()
+
+
+def _command_lines(pid: int) -> str:
+    """What `ps` and /proc say about `pid`, for a failure message."""
+    ps = subprocess.run(  # noqa: S603 - fixed argv
+        [PS, "-o", "pid,stat,command", "-p", str(pid)], capture_output=True, text=True, check=False
+    )
+    proc = Path(f"/proc/{pid}/cmdline")
+    cmdline = proc.read_bytes() if proc.exists() else b"<no /proc>"
+    return (
+        f"fake capture never showed its command line\nsys.executable: {sys.executable}\n"
+        f"ps (exit {ps.returncode}): {ps.stdout!r} {ps.stderr!r}\n/proc cmdline: {cmdline!r}"
+    )
 
 
 def write_pid(state_dir: Path, pid: int) -> Path:
