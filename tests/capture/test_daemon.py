@@ -88,6 +88,24 @@ def test_is_capture(
     assert is_capture(fake_capture.pid)
 
 
+def test_is_capture_sees_past_the_terminal_width(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`ps` cuts its last column at COLUMNS; a long venv path must not hide `canarywire serve`."""
+    monkeypatch.setenv("COLUMNS", "80")
+    padding = "x" * 120
+    process = subprocess.Popen(  # noqa: S603 - fixed argv
+        [sys.executable, "-c", SLEEP, padding, "canarywire", "serve"]
+    )
+    try:
+        deadline = time.monotonic() + HEALTH_TIMEOUT
+        while padding not in _command_lines(process.pid):  # wait for the exec
+            assert time.monotonic() < deadline
+            time.sleep(0.01)
+        assert is_capture(process.pid), _command_lines(process.pid)
+    finally:
+        process.kill()
+        process.wait()
+
+
 @pytest.mark.parametrize(
     "words",
     [["canarywire", "serverless"], ["notcanarywire", "serve"], ["xcanarywire", "serve-proxy"]],

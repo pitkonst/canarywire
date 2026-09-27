@@ -48,8 +48,10 @@ def is_capture(pid: int) -> bool:
         return False
     except PermissionError:
         pass  # exists but belongs to someone else; ps decides
+    # -ww: unlimited width. procps otherwise cuts the command at $COLUMNS, and a long venv path
+    # would push `canarywire serve` out of view.
     result = subprocess.run(  # noqa: S603 - fixed argv, pid is an int
-        [PS, "-o", "command=", "-p", str(pid)], capture_output=True, text=True, check=False
+        [PS, "-ww", "-o", "command=", "-p", str(pid)], capture_output=True, text=True, check=False
     )
     return CAPTURE_COMMAND.search(result.stdout) is not None
 
